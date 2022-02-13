@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .auth import basic_auth
-from .elasticsearch import executor
+from .elasticsearch import connection, executor
+from .metrics import ElasticSearchMetricsManager, add_metrics_app
 
 app = FastAPI()
 
@@ -19,6 +20,18 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+metrics_manager = ElasticSearchMetricsManager(client=connection.get_connection())
+
+add_metrics_app(
+    app,
+    measure_routes=[
+        "quepid_es_proxy.main.explain_missing_documents",
+        "quepid_es_proxy.main.explain",
+        "quepid_es_proxy.main.search_proxy",
+    ],
+    manager=metrics_manager,
 )
 
 
